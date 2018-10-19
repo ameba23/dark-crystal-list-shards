@@ -1,5 +1,5 @@
 {
-  "name": "dc_command",
+  "name": "dark-crystal-list-shards",
   "version": "1.0.0",
   "description": "list dark crystal shards",
   "main": "index.js",
