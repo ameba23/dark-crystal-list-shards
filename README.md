@@ -5,4 +5,4 @@
 
 ### TODO: 
 - Requests/replies
-
+- Quorum (from ritual)
