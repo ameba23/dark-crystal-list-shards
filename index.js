@@ -39,6 +39,13 @@ ssbClient(keys, config, (err, sbot) => {
                 var table = new Table(roots)
                 table.setHeader(['name', 'created', 'recipients'])
                 console.log(table)
+
+                pull(
+                  darkCrystal.shard.pull.myCustodianship(),
+                  pull.collect((err,msgs)=>{
+                    console.log(msgs)
+                  })
+                )
               }
             })
           )
