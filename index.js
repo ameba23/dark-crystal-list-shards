@@ -4,11 +4,12 @@ var path = require('path')
 var DarkCrystal = require('scuttle-dark-crystal')
 var pull = require('pull-stream')
 const getContent = require('ssb-msg-content')
+const Table = require('@lvchengbin/cli-table')
 
 var keys = require('ssb-keys')
   .loadOrCreateSync(path.join(config.path, 'secret'))
 
-var name, created, roots = []
+var names = {}, roots = [], count = 0   
 
 ssbClient(keys, config, (err, sbot) => {
   if (err) throw err
@@ -17,27 +18,34 @@ ssbClient(keys, config, (err, sbot) => {
     const me = msg.id
     sbot.about.get((err, about) => {
       var darkCrystal = DarkCrystal(sbot)
+
       pull(
         darkCrystal.root.pull.mine({live: false}),
         pull.drain(root => {
-          roots.push(root)
-        // console.log(JSON.stringify(root,null,4));
+          count++
+          names[root.key] = []
+          pull(
+            darkCrystal.shard.pull.byRoot(root.key),
+            pull.drain(shard => {
+              var recps = getContent(shard).recps.filter(r => r !== me)
+              names[getContent(shard).root].push(recps.map(r => resolveId(r, about))[0])
+           }, () => {
+              roots.push([
+                getContent(root).name,
+                new Date(root.value.timestamp).toLocaleDateString(),
+                names[root.key]
+              ])
+              if (roots.length === count) {
+                var table = new Table(roots)
+                table.setHeader(['name', 'created', 'recipients'])
+                console.log(table)
+              }
+            })
+          )
         }, () => {
-          roots.map(root => {
-            pull(
-              darkCrystal.shard.pull.byRoot(root.key),
-              pull.collect((err, shards) => {
-                var recps = shards.map(s => getContent(s).recps.filter(r => r !== me))
-                const names = recps.map(r => resolveId(r, about))
-                name = getContent(root).name
-                created = new Date(root.value.timestamp).toLocaleDateString()
-                
-                console.log(name, created, names )
-              })
-            )
-          })
           sbot.close()
         })
+
       )
     })
   })

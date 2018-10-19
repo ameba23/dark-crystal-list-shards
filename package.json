@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@lvchengbin/cli-table": "0.0.0",
     "pull-stream": "^3.6.9",
     "scuttle-dark-crystal": "^0.1.11",
     "ssb-client": "^4.6.0",
