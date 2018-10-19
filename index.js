@@ -1,15 +1,19 @@
-var ssbClient = require('ssb-client')
-var config = require('ssb-config/inject')()
-var path = require('path')
-var DarkCrystal = require('scuttle-dark-crystal')
-var pull = require('pull-stream')
+#!/bin/env node
+const ssbClient = require('ssb-client')
+const config = require('ssb-config/inject')()
+const path = require('path')
+const DarkCrystal = require('scuttle-dark-crystal')
+const pull = require('pull-stream')
 const getContent = require('ssb-msg-content')
 const Table = require('@lvchengbin/cli-table')
+const chalk = require('chalk')
 
-var keys = require('ssb-keys')
+const keys = require('ssb-keys')
   .loadOrCreateSync(path.join(config.path, 'secret'))
 
-var names = {}, roots = [], count = 0   
+var names = {}
+var roots = []
+var count = 0
 
 ssbClient(keys, config, (err, sbot) => {
   if (err) throw err
@@ -17,6 +21,7 @@ ssbClient(keys, config, (err, sbot) => {
     if (err) throw err
     const me = msg.id
     sbot.about.get((err, about) => {
+      if (err) throw err
       var darkCrystal = DarkCrystal(sbot)
 
       pull(
@@ -29,7 +34,7 @@ ssbClient(keys, config, (err, sbot) => {
             pull.drain(shard => {
               var recps = getContent(shard).recps.filter(r => r !== me)
               names[getContent(shard).root].push(recps.map(r => resolveId(r, about))[0])
-           }, () => {
+            }, () => {
               roots.push([
                 getContent(root).name,
                 new Date(root.value.timestamp).toLocaleDateString(),
@@ -37,22 +42,30 @@ ssbClient(keys, config, (err, sbot) => {
               ])
               if (roots.length === count) {
                 var table = new Table(roots)
-                table.setHeader(['name', 'created', 'recipients'])
+                table.setHeader(['Name', 'Created', 'Recipients'])
+                console.log(chalk.blue('My Crystals'))
                 console.log(table)
-
+                var shardsFromOthers = []
                 pull(
-                  darkCrystal.shard.pull.myCustodianship(),
-                  pull.collect((err,msgs)=>{
-                    console.log(msgs)
+
+                  darkCrystal.shard.pull.fromOthers({live: false}),
+                  pull.drain((msg) => {
+                    shardsFromOthers.push([
+                      resolveId(msg.value.author, about),
+                      new Date(msg.value.timestamp).toLocaleDateString()
+                    ])
+                  }, () => {
+                    var shardsTable = new Table(shardsFromOthers)
+                    shardsTable.setHeader(['Author', 'Date'])
+                    console.log(chalk.blue('Others shards'))
+                    console.log(shardsTable)
+                    sbot.close()
                   })
                 )
               }
             })
           )
-        }, () => {
-          sbot.close()
         })
-
       )
     })
   })

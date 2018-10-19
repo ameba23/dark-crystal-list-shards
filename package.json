@@ -1,7 +1,7 @@
 {
   "name": "dc_command",
   "version": "1.0.0",
-  "description": "",
+  "description": "list dark crystal shards",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@lvchengbin/cli-table": "0.0.0",
+    "chalk": "^2.4.1",
     "pull-stream": "^3.6.9",
     "scuttle-dark-crystal": "^0.1.11",
     "ssb-client": "^4.6.0",
